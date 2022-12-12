@@ -38,18 +38,19 @@ def ping(hostname, dest_port, port, packet_size, number_of_pings, sleep_time, ti
     payload_size = packet_size - udp_hdr_size
     times = []
 
+    payload = gen_data(payload_size)
+    length = 8 + payload_size
+    checksum = 0
+
+    header = struct.pack('!4H', dest_port, port, length, checksum)
+
     print(f'Ping {hostname} ({ip}) with {packet_size} bytes.')
 
     for i in range(number_of_pings):
         try:
-            payload = gen_data(payload_size)
-            length = 8 + payload_size
-            checksum = 0
-
-            header_bad_checksum = struct.pack('!4H', dest_port, port, length, checksum)
 
             s = time.time()
-            sock_out.sendto(header_bad_checksum + payload, (ip, port))
+            sock_out.sendto(header + payload, (ip, port))
 
             try:
                 rec_pkg = sock_in.recv(ip_hdr_size + icmp_hdr_size)
