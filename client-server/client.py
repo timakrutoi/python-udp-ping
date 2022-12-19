@@ -31,7 +31,7 @@ def get_local_ip(soc):
 def ping(
         hostname,
         dest_port, src_port, packet_size, number_of_pings,
-        sleep_time, timeout, calc_checksum):
+        sleep_time, timeout, checksum):
 
     sock_out = socket.socket(
             family=socket.AF_INET,
@@ -56,10 +56,17 @@ def ping(
     payload = gen_data(payload_size)
     length = 8 + payload_size
 
-    header = struct.pack('!4H', src_port, dest_port, length, 0)
-    if calc_checksum:
+    if checksum == -1:
+        header = struct.pack('!4H', src_port, dest_port, length, 0)
         checksum = get_checksum(get_local_ip(sock_out), ip, header + payload)
         header = struct.pack('!3H', src_port, dest_port, length) + checksum
+    else:
+        try:
+            header = struct.pack('!4H', src_port, dest_port, length, checksum)
+        except struct.error:
+            print(f'Error: checksum {checksum} is wrong, '
+                  'must be 0 <= value < 2**16')
+            exit()
 
     header += payload
 
@@ -120,8 +127,9 @@ if __name__ == '__main__':
                    help='Time between pings in ms. Default = %(default)d.')
     p.add_argument('--timeout', type=int, default=10,
                    help='Time to wait for reply in s. Default = %(default)d.')
-    p.add_argument('-c', '--calc-checksum', action='store_true', default=False,
-                   help='Calculate checksum or not. Default = %(default)b.')
+    p.add_argument('-c', '--checksum', type=int, default=-1,
+                   help='Checksum value (use -1 to use auto calculation). '
+                   'Default = %(default)d.')
 
     a = p.parse_args()
 

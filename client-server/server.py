@@ -33,11 +33,13 @@ def server(port):
             continue
 
         checksum = calc_checksum(src_ip, dest_ip, message[20:])
-        if int.from_bytes(checksum, 'big') == 0:
-            print(f'got correct checksum from {bytes2ip(src_ip)}:{d_port}')
+        if int.from_bytes(message[26:28], 'big') == 0:
+            print(f'got zero checksum from {bytes2ip(src_ip)}')
+        elif int.from_bytes(checksum, 'big') == 0:
+            print(f'got correct checksum from {bytes2ip(src_ip)}')
         else:
             print(f'got wrong checksum {checksum} '
-                  'from {bytes2ip(src_ip)}:{d_port}')
+                  f'from {bytes2ip(src_ip)}')
 
             msg = (struct.pack('!4H', d_port, s_port, 8 + 12, 0)
                    + bytes('Bad checksum', 'utf-8'))
