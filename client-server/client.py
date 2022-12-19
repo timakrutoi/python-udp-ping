@@ -22,6 +22,12 @@ def dns_lookup(hostname):
     return socket.gethostbyname(hostname)
 
 
+def get_local_ip(soc):
+    soc.connect(('8.8.8.8', 80))
+
+    return soc.getsockname()[0]
+
+
 def ping(
         hostname,
         dest_port, src_port, packet_size, number_of_pings,
@@ -51,7 +57,7 @@ def ping(
 
     header = struct.pack('!4H', src_port, dest_port, length, 0)
     if calc_checksum:
-        checksum = get_checksum('127.0.0.1', ip, header + payload)
+        checksum = get_checksum(get_local_ip(sock_out), ip, header + payload)
         header = struct.pack('!3H', src_port, dest_port, length) + checksum
 
     header += payload
