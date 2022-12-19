@@ -8,6 +8,10 @@ import struct
 from udpchecksum import calc_checksum
 
 
+def bytes2ip(x):
+    return '.'.join([str(i) for i in x])
+
+
 def server(port):
     serverSocket = socket.socket(
             family=socket.AF_INET,
@@ -28,18 +32,16 @@ def server(port):
             # print('got wrong port ', d_port)
             continue
 
-        length = message[24:26]
-        message = message[:20+int.from_bytes(length, 'big')]
-
         checksum = calc_checksum(src_ip, dest_ip, message[20:])
         if int.from_bytes(checksum, 'big') == 0:
-            print(f'got correct checksum from {dest_ip}:{d_port} ({s_port})')
+            print(f'got correct checksum from {bytes2ip(src_ip)}:{d_port}')
         else:
-            print('got wrong checksum ', checksum)
+            print(f'got wrong checksum {checksum} '
+                  'from {bytes2ip(src_ip)}:{d_port}')
+
             msg = (struct.pack('!4H', d_port, s_port, 8 + 12, 0)
                    + bytes('Bad checksum', 'utf-8'))
-            d_ip = f'{dest_ip[0]}.{dest_ip[1]}.{dest_ip[2]}.{dest_ip[3]}'
-            serverSocket.sendto(msg, (d_ip, s_port))
+            serverSocket.sendto(msg, (bytes2ip(src_ip), s_port))
 
         time.sleep(0.1)
 
