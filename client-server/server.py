@@ -14,7 +14,6 @@ def server(port):
             type=socket.SOCK_RAW,
             proto=socket.IPPROTO_UDP)
     serverSocket.bind(('', port))
-    # serverSocket.connect(('127.0.0.1', port))
 
     while True:
         message = serverSocket.recv(1024)
@@ -34,13 +33,13 @@ def server(port):
 
         checksum = calc_checksum(src_ip, dest_ip, message[20:])
         if int.from_bytes(checksum, 'big') == 0:
-            print('got correct checksum ', checksum)
+            print(f'got correct checksum from {dest_ip}:{d_port} ({s_port})')
         else:
             print('got wrong checksum ', checksum)
-            msg = (struct.pack('!4H', s_port, d_port, 8 + 12, 0)
+            msg = (struct.pack('!4H', d_port, s_port, 8 + 12, 0)
                    + bytes('Bad checksum', 'utf-8'))
             d_ip = f'{dest_ip[0]}.{dest_ip[1]}.{dest_ip[2]}.{dest_ip[3]}'
-            serverSocket.sendto(msg, (d_ip, port))
+            serverSocket.sendto(msg, (d_ip, s_port))
 
         time.sleep(0.1)
 
@@ -48,7 +47,7 @@ def server(port):
 if __name__ == '__main__':
     from argparse import ArgumentParser
     p = ArgumentParser()
-    p.add_argument('-p', '--port', type=int, default=56789)
+    p.add_argument('-p', '--port', type=int, default=55555)
 
     a = p.parse_args()
 

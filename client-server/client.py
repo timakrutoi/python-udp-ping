@@ -24,7 +24,7 @@ def dns_lookup(hostname):
 
 def ping(
         hostname,
-        dest_port, port, packet_size, number_of_pings,
+        dest_port, src_port, packet_size, number_of_pings,
         sleep_time, timeout, calc_checksum):
 
     sock_out = socket.socket(
@@ -49,11 +49,10 @@ def ping(
     payload = gen_data(payload_size)
     length = 8 + payload_size
 
-    print(dest_port, port)
-    header = struct.pack('!4H', dest_port, port, length, 0)
+    header = struct.pack('!4H', src_port, dest_port, length, 0)
     if calc_checksum:
         checksum = get_checksum('127.0.0.1', ip, header + payload)
-        header = struct.pack('!3H', dest_port, port, length) + checksum
+        header = struct.pack('!3H', src_port, dest_port, length) + checksum
 
     header += payload
 
@@ -62,17 +61,24 @@ def ping(
     for i in range(number_of_pings):
         try:
             s = time.time()
-            sock_out.sendto(header + payload, (ip, port))
+            sock_out.sendto(header + payload, (ip, dest_port))
 
             try:
-                rec_pkg = sock_in.recv(1024)
+                rec_pkg = sock_in.recv(1024)  # to skip own package
+                # if rec_pkg[12:16] == b'\x7f\x00\x00\x01':
+                s_port = int.from_bytes(rec_pkg[20:22], 'big')
+                d_port = int.from_bytes(rec_pkg[22:24], 'big')
+                if d_port != src_port:
+                    # print('got wrong port ', d_port)
+                    # continue
+                    rec_pkg = sock_in.recv(1024)
             except socket.timeout:
                 print(f'No reply recieved in {timeout}s.')
                 sock_in.settimeout(timeout)
                 continue
 
             times.append(round((time.time() - s)*1000, 2))
-            print(f'recieved reply from {rec_pkg[12:16]} in {times[-1]}ms, '
+            print(f'recieved reply from {rec_pkg[12:16]}:{s_port} in {times[-1]}ms, '
                   f'(message {rec_pkg[ip_hdr_size + 8:]})')
 
             time.sleep(sleep_time / 1000)
@@ -94,10 +100,11 @@ if __name__ == '__main__':
     p = ArgumentParser()
     p.add_argument('--ip', '--hostname', dest='hostname', type=str,
                    help='IP of server to ping.')
-    p.add_argument('--dest-port', type=int, default=4567,
-                   help='Port to get reply. Default = %(default)d.')
-    p.add_argument('--port', type=int, default=33434,
+    p.add_argument('--port', '--dest-port', dest='dest_port',
+                   type=int, default=33434,
                    help='Port to ping. Default = %(default)d.')
+    p.add_argument('--src-port', type=int, default=4567,
+                   help='Port to get reply. Default = %(default)d.')
     p.add_argument('-l', '--packet-size', type=int, default=64,
                    help='Size of packet. Default = %(default)d.')
     p.add_argument('-n', '--number-of-pings', type=int, default=3,
