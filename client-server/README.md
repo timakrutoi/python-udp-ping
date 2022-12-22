@@ -6,7 +6,7 @@ Custom ping, reply is caused by wrong UDP checksum.
 
 Start server first:
 
-```python server.py --ip 55555```
+```python server.py --port 55555```
 
 Ping your server:
 
