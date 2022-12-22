@@ -8,6 +8,10 @@ import time
 from udpchecksum import calc_checksum as get_checksum
 
 
+def bytes2ip(x):
+    return '.'.join([str(i) for i in x])
+
+
 def gen_data(size):
     alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789'
     res = ''
@@ -91,7 +95,7 @@ def ping(
                 continue
 
             times.append(round((time.time() - s)*1000, 2))
-            print(f'recieved reply from {rec_pkg[12:16]}:{s_port} '
+            print(f'recieved reply from {bytes2ip(rec_pkg[12:16])}:{s_port} '
                   f'in {times[-1]}ms, '
                   f'(message {rec_pkg[ip_hdr_size + 8:]})')
 
