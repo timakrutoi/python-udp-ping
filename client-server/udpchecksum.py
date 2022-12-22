@@ -6,14 +6,11 @@ def calc_checksum(src_ip, dest_ip, data):
         src_ip = struct.pack('!4B', *[int(x) for x in src_ip.split('.')])
     if type(dest_ip) == str:
         dest_ip = struct.pack('!4B', *[int(x) for x in dest_ip.split('.')])
-    # print(src_ip, dest_ip, data, len(data))
     zero_proto = struct.pack('!2B', 0, 17)
     length = struct.pack('!2B', data[4], data[5])
 
     pseudo_hdr = src_ip + dest_ip + zero_proto + length + data
-    # print(len(pseudo_hdr))
     if len(pseudo_hdr) % 2 == 1:
-        # print('Addint 0 at the end')
         pseudo_hdr += struct.pack('!1B', 0)
 
     checksum = 0
@@ -37,7 +34,6 @@ if __name__ == '__main__':
     length = 8 + len(payload)
     checksum = 0
 
-    # print(dest_port, port, length)
     header = struct.pack('!4H', dest_port, port, length, checksum) + payload
 
     checksum = calc_checksum(src, dest, header)
