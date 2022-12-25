@@ -77,21 +77,25 @@ def ping(
     print(f'Ping {hostname} ({ip}) with {packet_size} bytes.')
 
     for i in range(number_of_pings):
+        flag = False
         try:
             s = time.time()
             sock_out.sendto(header, (ip, dest_port))
 
             try:
-                rec_pkg = sock_in.recv(1024)  # to skip own package
-                s_port = int.from_bytes(rec_pkg[20:22], 'big')
-                d_port = int.from_bytes(rec_pkg[22:24], 'big')
-                if d_port != src_port:
-                    # print('got wrong port ', d_port)
-                    # continue
-                    rec_pkg = sock_in.recv(1024)
+                for _ in range(10):
+                    rec_pkg = sock_in.recv(1024)  # to skip own package
+                    s_port = int.from_bytes(rec_pkg[20:22], 'big')
+                    d_port = int.from_bytes(rec_pkg[22:24], 'big')
+                    if d_port == src_port:
+                        flag = True
+                        break
             except socket.timeout:
-                print(f'No reply recieved in {timeout}s.')
+                print(f'No reply recieved ({timeout}s).')
                 sock_in.settimeout(timeout)
+                continue
+            if not flag:
+                print(f'No reply recieved ({timeout}s).')
                 continue
 
             times.append(round((time.time() - s)*1000, 2))
