@@ -8,11 +8,9 @@ import time
 
 def gen_data(size):
     alphabet = '0123456789abcdefghijklmnopqrstuvwxyz'
-    res = ''
-    for i in range(size):
-        res += alphabet[i % len(alphabet)]
+    res = [alphabet[i % len(alphabet)] for i in range(size)]
 
-    return bytes(res, 'utf-8')
+    return bytes(''.join(res), 'utf-8')
 
 
 def dns_lookup(hostname):
